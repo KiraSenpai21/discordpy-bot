@@ -19,9 +19,12 @@ async def on_command_error(ctx, error):
 @client.event
 async def on_ready():
     print('Bot is now initialized... and online', f"latency: {round(client.latency * 1000)}ms")
-    for filename in os.listdir("./cogs"):
-      if filename.endswith(".py") and filename != "__init__.py":
-         await client.load_extension(f'cogs.{filename[:-3]}')
+    try:
+        for filename in os.listdir("./cogs"):
+          if filename.endswith(".py") and filename != "__init__.py":
+             await client.load_extension(f'cogs.{filename[:-3]}')
+    except Exception as e:
+        print(e)
 
 @client.event
 async def on_member_join(member, reason=None):
