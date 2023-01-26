@@ -27,5 +27,5 @@ class voice(commands.Cog):
                     await before.channel.delete()
 
 
-def setup(client):
-    client.add_cog(voice(client))
+async def setup(client):
+    await client.add_cog(voice(client))
