@@ -6,7 +6,6 @@ intents = discord.Intents.default()
 intents.members = True
 
 client = commands.Bot(command_prefix='$', intents=intents)
-client.remove_command('help')
 
 @client.event
 async def on_command_error(ctx, error):
