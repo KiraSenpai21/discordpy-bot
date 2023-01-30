@@ -143,7 +143,7 @@ async def profile(ctx:discord.Interaction, username:str):
           embed = discord.Embed(
               title=f"Level: {lvl}",
               description=
-              f"Solo/Duo No Wins or Losses  \n Flex Wins: **{wins}** Losses: **{losses}** Wins behind or ahead: **{wins - losses}**",
+              f"Solo/Duo No Wins or Losses  \n Flex Wins: **{wins}** Losses: **{losses}** Wins behind or ahead: **{wins - losses}** with **{float(wins)/float(losses)*100}%**winrate",
               colour=discord.Colour.purple())
           embed.add_field(
               name="Flex",
