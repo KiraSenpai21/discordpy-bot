@@ -17,10 +17,6 @@ class Unbroken(discord.Client):
         self.synced = True
         await client.change_presence(status=discord.Status.dnd, activity=discord.Game('Unbroken!'))
         print('Bot is now initialized... and online', f"latency: {round(client.latency * 1000)}ms")
-        # for filename in os.listdir("./cogs"):
-        #     if filename.endswith(".py") and filename != "__init__.py":
-        #         client.load_extension(f'cogs.{filename[:-3]}')
-                
 
 client = Unbroken()
 tree = app_commands.CommandTree(client)
