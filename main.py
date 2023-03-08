@@ -6,8 +6,8 @@ import random
 import time
 import os
 
-#Version 2.4.2
-
+# Version: 3.0.5 
+# Author: KiraSenpai
 
 class Unbroken(discord.Client):
     def __init__(self):
@@ -36,161 +36,155 @@ async def ping(ctx:discord.Interaction):
 
 @tree.command(name='profile', description='shows stats about your rank in this season', guild=discord.Object(id=821479008574242918))
 async def profile(ctx:discord.Interaction, username:str):
-        region = 'eun1'
-        API = os.environ['LApi']
-        lol_watcher = LolWatcher(API)
-        me = lol_watcher.summoner.by_name(region, username)
-        ranked_stats = lol_watcher.league.by_summoner(region, me['id'])
-        lvl = me["summonerLevel"]
-        code = me['profileIconId']
-        id = me["id"]
-        champs = lol_watcher.champion_mastery.by_summoner(region,id)
-        championLevel = champs[0]['championLevel']
-        championId = champs[0]['championId']
-        championPoints = "{:,}".format(champs[0]['championPoints'])
-        ranked_stats = lol_watcher.league.by_summoner(region, me['id'])
-        UNRANKED = False
-        ranked = False
-        flexed = False
-        for i in ranked_stats:
-            if i['queueType']== 'RANKED_SOLO_5x5':
-                RANKED_SOLO_5x5 = i
-                ranked = True
-            elif i['queueType'] == 'RANKED_FLEX_SR':
-                RANKED_FLEX_SR = i
-                flexed = True
-            elif RANKED_SOLO_5x5 == False and RANKED_FLEX_SR == False:
-                UNRANKED = True
-        if UNRANKED == True:
-            embed = discord.Embed(
-                title=f"Level: {lvl}",
-                description=
-                f"Solo/Duo Wins: Unranked \n Flex Wins: Unranked",
-                colour=discord.Colour.green())
-            embed.add_field(name="Solo/Duo",
-                            value=f"Unranked",
-                            inline=True)
-            embed.add_field(name="Flex",
-                            value=f"Unranked",
-                            inline=True)
-            embed.set_author(
-                name=f"{me['name']}",
-                icon_url=
-                f"https://raw.communitydragon.org/latest/game/assets/ux/summonericons/profileicon{code}.png"
-            )
-            await ctx.response.send_message(embed=embed)
-
-        elif ranked == True and flexed == True:
-            tier = RANKED_SOLO_5x5["tier"]
-            rank = RANKED_SOLO_5x5["rank"]
-            wins = RANKED_SOLO_5x5["wins"]
-            losses = RANKED_SOLO_5x5["losses"]
-            lp = RANKED_SOLO_5x5["leaguePoints"]
-            tierf = RANKED_FLEX_SR["tier"]
-            rankf = RANKED_FLEX_SR["rank"]
-            winsf = RANKED_FLEX_SR["wins"]
-            lossesf = RANKED_FLEX_SR["losses"]
-            lpf = RANKED_FLEX_SR["leaguePoints"]
-            embed = discord.Embed(
-                title=f"Level: {lvl}",
-                description=
-                f"Solo/Duo Wins: **{wins}** Losses: **{losses}** Wins behind or ahead: **{wins - losses}** **{wins - losses}** with **{round((wins/(wins+losses))*100)}%** winrate \n Flex Wins: **{winsf}** Losses: **{lossesf}** Wins behind or ahead: **{winsf - lossesf}** and **{winsf - lossesf}** with **{round((winsf/(winsf+lossesf))*100)}%** winrate",
-                colour=discord.Colour.purple())
-            embed.add_field(
-                name="Solo/Duo",
-                value=
-                f"Tier: {tier} \n Rank: {rank} \n LP: {lp} \n Total Games: **{wins + losses}**",
-                inline=True)
-            embed.add_field(
-                name="Flex",
-                value=
-                f"Tier: {tierf} \n Rank: {rankf} \n LP: {lpf} \n Total Games: {winsf + lossesf}",
-                inline=True)
-            embed.add_field(
-                name=f"Main's {get_champions_name(championId)}",
-                value=f"Mastery Level: {championLevel} \n Points: {championPoints}",
-                inline=True
-            )
-            embed.set_author(
-                name=f"{me['name']}",
-                icon_url=
-                f"https://raw.communitydragon.org/latest/game/assets/ux/summonericons/profileicon{code}.png"
-            )
-            rank_icon = str.lower(tier)
-            embed.set_thumbnail(
-                url=
-                f"https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/{rank_icon}.png"
-            )
-            await ctx.send(embed=embed)
-
-    #MONO SOLO/DUO
-
-        elif ranked == True:
-            tier = RANKED_SOLO_5x5["tier"]
-            rank = RANKED_SOLO_5x5["rank"]
-            wins = RANKED_SOLO_5x5["wins"]
-            losses = RANKED_SOLO_5x5["losses"]
-            lp = RANKED_SOLO_5x5["leaguePoints"]
-            embed = discord.Embed(
-                title=f"Level: {lvl}",
-                description=
-                f"Solo/Duo Wins: **{wins}** Losses: **{losses}** Wins behind or ahead: **{wins - losses}** with **{round((wins/(wins+losses))*100)}%**  \n Flex Wins: No wins or losses",
-                colour=discord.Colour.purple())
-            embed.add_field(
-                name="Solo/Duo",
-                value=
-                f"Tier: {tier} \n Rank: {rank} \n LP: {lp} \n Total Games: **{wins + losses}**",
-                inline=True)
-            embed.add_field(
-                name=f"Main's {get_champions_name(championId)}",
-                value=f"Mastery Level: {championLevel} \n Points: {championPoints}",
-                inline=True
-            )
-            embed.set_author(
-                name=f"{me['name']}",
-                icon_url=
-                f"https://raw.communitydragon.org/latest/game/assets/ux/summonericons/profileicon{code}.png"
-            )
-            rank_icon = str.lower(tier)
-            embed.set_thumbnail(
-                url=
-                f"https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/{rank_icon}.png"
-            )
-            await ctx.response.send_message(embed=embed)
-
-    #MONO FLEX
-
-        elif flexed == True:
-            tier = RANKED_FLEX_SR["tier"]
-            rank = RANKED_FLEX_SR["rank"]
-            wins = RANKED_FLEX_SR["wins"]
-            losses = RANKED_FLEX_SR["losses"]
-            lp = RANKED_FLEX_SR["leaguePoints"]
-            embed = discord.Embed(
-                title=f"Level: {lvl}",
-                description=
-                f"Solo/Duo No Wins or Losses  \n Flex Wins: **{wins}** Losses: **{losses}** Wins behind or ahead: **{wins - losses}** with **{round((wins/(wins+losses))*100)}%** winrate",
-                colour=discord.Colour.purple())
-            embed.add_field(
-                name="Flex",
-                value=
-                f"Tier: {tier} \n Rank: {rank} \n LP: {lp} \n Total Games: **{wins + losses}**",
-                inline=True)
-            embed.add_field(
-                name=f"Main's {get_champions_name(championId)}",
-                value=f"Mastery Level: {championLevel} \n Points: {championPoints}",
-                inline=True
-            )
-            embed.set_author(
-                name=f"{me['name']}",
-                icon_url=
-                f"https://raw.communitydragon.org/latest/game/assets/ux/summonericons/profileicon{code}.png"
-            )
-            rank_icon = str.lower(tier)
-            embed.set_thumbnail(
-                url=
-                f"https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/{rank_icon}.png"
-            )
-            await ctx.response.send_message(embed=embed)
+    region = 'eun1'
+    API = os.environ['LApi']
+    lol_watcher = LolWatcher(API)
+    me = lol_watcher.summoner.by_name(region, username)
+    ranked_stats = lol_watcher.league.by_summoner(region, me['id'])
+    lvl = me["summonerLevel"]
+    code = me['profileIconId']
+    id = me["id"]
+    champs = lol_watcher.champion_mastery.by_summoner(region,id)
+    championLevel = champs[0]['championLevel']
+    championId = champs[0]['championId']
+    championPoints = "{:,}".format(champs[0]['championPoints'])
+    ranked_solo = None
+    ranked_flex = None
+    unranked = False
+    both = False
+    if ranked_stats == []:
+        unranked = True
+    else:
+        for rank in ranked_stats:
+            if rank['queueType'] == 'RANKED_SOLO_5x5':
+                ranked_solo = rank
+            if rank['queueType'] == 'RANKED_FLEX_SR':
+                ranked_flex = rank
+        if ranked_solo and ranked_flex:
+            both = True
+    if unranked:
+        embed = discord.Embed(
+            title=f"Level: {lvl}",
+            description=f"Solo/Duo Wins: **Unranked** \n Flex Wins: **Unranked**",
+            colour=discord.Colour.purple()
+        )
+        embed.add_field(
+            name=f"Main's {get_champions_name(championId)}",
+            value=f"Mastery Level: {championLevel} \n Points: {championPoints}",
+            inline=True
+        )
+        embed.set_author(
+            name=f"{me['name']}",
+            icon_url=f"https://raw.communitydragon.org/latest/game/assets/ux/summonericons/profileicon{code}.png"
+        )
+        await ctx.response.send_message(embed=embed)
+    elif both:
+        #Solo duo 5x5 
+        wins = ranked_solo['wins']
+        losses = ranked_solo['losses']
+        rank = ranked_solo['rank']
+        lp = ranked_solo['leaguePoints']
+        tier = ranked_solo['tier']
+        #Flex 5x5
+        tierf = ranked_flex["tier"]
+        rankf = ranked_flex["rank"]
+        winsf = ranked_flex["wins"]
+        lossesf = ranked_flex["losses"]
+        lpf = ranked_flex["leaguePoints"]
+        embed = discord.Embed(
+            title=f"Level: {lvl}",
+            description=
+            f"Solo/Duo Wins: **{wins}** Losses: **{losses}** Wins behind or ahead: **{wins - losses}** with **{round((wins/(wins+losses))*100)}%** Win rate. \n Flex Wins: **{winsf}** Losses: **{lossesf}** Wins behind or ahead: **{winsf - lossesf}** and with **{round((winsf/(winsf+lossesf))*100)}%** Win rate.",
+            colour=discord.Colour.purple())
+        embed.add_field(
+            name="Solo/Duo",
+            value=
+            f"Tier: {tier} \n Rank: {rank} \n LP: {lp} \n Total Games: **{wins + losses}**",
+            inline=True)
+        embed.add_field(
+            name="Flex",
+            value=
+            f"Tier: {tierf} \n Rank: {rankf} \n LP: {lpf} \n Total Games: **{winsf + lossesf}**",
+            inline=True)
+        embed.add_field(
+            name=f"Main's {get_champions_name(championId)}",
+            value=f"Mastery Level: {championLevel} \n Points: {championPoints}",
+            inline=True
+        )
+        embed.set_author(
+            name=f"{me['name']}",
+            icon_url=
+            f"https://raw.communitydragon.org/latest/game/assets/ux/summonericons/profileicon{code}.png"
+        )
+        rank_icon = str.lower(tier)
+        embed.set_thumbnail(
+            url=
+            f"https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/{rank_icon}.png"
+        )
+        await ctx.response.send_message(embed=embed)
+    elif ranked_solo:
+        wins = ranked_solo['wins']
+        losses = ranked_solo['losses']
+        rank = ranked_solo['rank']
+        lp = ranked_solo['leaguePoints']
+        tier = ranked_solo['tier']
+        embed = discord.Embed(
+            title=f"Level: {lvl}",
+            description=
+            f"Solo/Duo Wins: **{wins}** Losses: **{losses}** Wins behind or ahead: **{wins - losses}** with **{round((wins/(wins+losses))*100)}%**  \n Flex Wins: No wins or losses",
+            colour=discord.Colour.purple())
+        embed.add_field(
+            name="Solo/Duo",
+            value=
+            f"Tier: {tier} \n Rank: {rank} \n LP: {lp} \n Total Games: **{wins + losses}**",
+            inline=True)
+        embed.add_field(
+            name=f"Main's {get_champions_name(championId)}",
+            value=f"Mastery Level: {championLevel} \n Points: {championPoints}",
+            inline=True
+        )
+        embed.set_author(
+            name=f"{me['name']}",
+            icon_url=
+            f"https://raw.communitydragon.org/latest/game/assets/ux/summonericons/profileicon{code}.png"
+        )
+        rank_icon = str.lower(tier)
+        embed.set_thumbnail(
+            url=
+            f"https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/{rank_icon}.png"
+        )
+        await ctx.response.send_message(embed=embed)
+    elif ranked_flex:
+        tierf = ranked_flex["tier"]
+        rankf = ranked_flex["rank"]
+        winsf = ranked_flex["wins"]
+        lossesf = ranked_flex["losses"]
+        lpf = ranked_flex["leaguePoints"]
+        embed = discord.Embed(
+            title=f"Level: {lvl}",
+            description=
+            f"Solo/Duo No Wins or Losses  \n Flex Wins: **{wins}** Losses: **{losses}** Wins behind or ahead: **{wins - losses}** with **{round((wins/(wins+losses))*100)}%** winrate",
+            colour=discord.Colour.purple())
+        embed.add_field(
+            name="Flex",
+            value=
+            f"Tier: {tier} \n Rank: {rank} \n LP: {lp} \n Total Games: **{wins + losses}**",
+            inline=True)
+        embed.add_field(
+            name=f"Main's {get_champions_name(championId)}",
+            value=f"Mastery Level: {championLevel} \n Points: {championPoints}",
+            inline=True
+        )
+        embed.set_author(
+            name=f"{me['name']}",
+            icon_url=
+            f"https://raw.communitydragon.org/latest/game/assets/ux/summonericons/profileicon{code}.png"
+        )
+        rank_icon = str.lower(tier)
+        embed.set_thumbnail(
+            url=
+            f"https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/{rank_icon}.png"
+        )
+        await ctx.response.send_message(embed=embed)
 
 client.run(os.environ["DISCORD_TOKEN"])
