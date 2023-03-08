@@ -6,8 +6,7 @@ import random
 import time
 import os
 
-# Version: 3.0.5 
-# Author: KiraSenpai
+# Version 3.0.6
 
 class Unbroken(discord.Client):
     def __init__(self):
