@@ -1,12 +1,10 @@
 import discord
 from discord import app_commands
-from riotwatcher import LolWatcher
+from riotwatcher import LolWatcher, ApiError
 from getChampionNameByID import get_champions_name
-import random
-import time
+import requests
 import os
 
-# Version 3.0.6
 
 class Unbroken(discord.Client):
     def __init__(self):
@@ -185,5 +183,53 @@ async def profile(ctx:discord.Interaction, username:str):
             f"https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/{rank_icon}.png"
         )
         await ctx.response.send_message(embed=embed)
+    try:
+        live_game = lol_watcher.spectator.by_summoner(region=region, encrypted_summoner_id=id)
+        participants = live_game['participants']
+        
+        # Separate participants into blue team and red team
+        blue_team = [p for p in participants if p['teamId'] == 100]
+        red_team = [p for p in participants if p['teamId'] == 200]
+        
+        # Get summoner names, ranks, and champion names for each team
+        blue_summoners = []
+        red_summoners = []
+        for participant in participants:
+            summoner_name = participant['summonerName']
+            summoner_id = participant['summonerId']
+            rank = 'Unranked'
+            try:
+                league_entries = lol_watcher.league.by_summoner(region=region, encrypted_summoner_id=summoner_id)
+                for entry in league_entries:
+                    if entry['queueType'] == 'RANKED_SOLO_5x5':
+                        rank = f'{entry["tier"]} {entry["rank"]} - {entry["leaguePoints"]} LP'
+                        break
+            except ApiError as err:
+                if err.response.status_code == 404:
+                    rank = 'Unranked'
+                else:
+                    raise
+            champion_id = participant['championId']
+            champion_name = get_champions_name(champion_id)
+            summoner_info = {'name': summoner_name ,'rank': rank, 'champion_name': champion_name}
+            if participant['teamId'] == 100:
+                blue_summoners.append(summoner_info)
+            else:
+                red_summoners.append(summoner_info)
+        
+        # Combine summoner info into two strings, one for each team
+        blue_list = '\n'.join([f'**{s["name"]}** ({s["rank"]}) \n {s["champion_name"]}' for s in blue_summoners])
+        red_list = '\n'.join([f'**{s["name"]}** ({s["rank"]}) \n {s["champion_name"]}' for s in red_summoners])
+        
+        # Create the embed with two columns
+        embed = discord.Embed(title=f'{username} is live playing right now', description='', color=discord.Colour.purple())
+        embed.add_field(name='Blue Team', value=blue_list, inline=True)
+        embed.add_field(name='Red Team', value=red_list, inline=True)
+        
+        await ctx.followup.send(embed=embed)
+    except Exception as e:
+        embed = discord.Embed(title=f'{username} is not in a game', description='this summoner is not currently in a game.', color=discord.Colour.purple())
+        await ctx.followup.send(embed=embed)
+        raise(e)
 
 client.run(os.environ["DISCORD_TOKEN"])
