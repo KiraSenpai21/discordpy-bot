@@ -162,9 +162,11 @@ def get_champions_name(_id):
         777: "Yone",
         887: "Gwen",
         876: "Lillia",
-
-
-
+        221: "Zeri",
+        200: "Bel'Veth",
+        895: "Nilah",
+        888: "Renata Glasc",
+        897: "K'Sante",
     }
     return all_champion_id.get(_id)
 
