@@ -5,6 +5,7 @@ from getChampionNameByID import get_champions_name
 import requests
 import os
 
+# VERSION: 1.2.20
 
 class Unbroken(discord.Client):
     def __init__(self):
