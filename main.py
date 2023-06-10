@@ -10,7 +10,7 @@ import json
 import time
 import os
 
-# VERSION: 1.2.20
+# VERSION: 2.2.20
 
 class Unbroken(discord.Client):
     def __init__(self):
