@@ -2,7 +2,12 @@ import discord
 from discord import app_commands
 from riotwatcher import LolWatcher, ApiError
 from getChampionNameByID import get_champions_name
+from threading import Thread
 import requests
+import datetime
+import random
+import json
+import time
 import os
 
 # VERSION: 1.2.20
@@ -232,5 +237,195 @@ async def profile(ctx:discord.Interaction, username:str):
         embed = discord.Embed(title=f'{username} is not in a game', description='this summoner is not currently in a game.', color=discord.Colour.purple())
         await ctx.followup.send(embed=embed)
         raise(e)
+    
+@tree.command(name='getrole',description='gives the rank you got as a role',guild=discord.Object(id=821479008574242918))
+async def profile(ctx: discord.Interaction, username: str):
+    region = 'eun1'
+    # API = os.environ['LApi']
+    API = 'RGAPI-c4b15a16-a68a-4520-9892-3affeb489db3'
+    lol_watcher = LolWatcher(API)
+    me = lol_watcher.summoner.by_name(region, username)
+    ranked_stats = lol_watcher.league.by_summoner(region, me['id'])
+    code = me['profileIconId']
+    ranked_solo = None
+    ranked_flex = None
+    unranked = False
+    both = False
+
+    # VERIFICATION CODE
+    ver_pic = random.randint(0, 10)
+    if ver_pic == code:
+        ver_pic = random.randint(0, 10)
+
+    embed = discord.Embed(
+        title='Need further Verification',
+        description='You need to verify it\'s your account first by changing the profile picture to the one shown below. Please note that you have only 60 seconds.',
+        color=discord.Colour.purple()
+    )
+    embed.set_thumbnail(
+        url=f"https://raw.communitydragon.org/latest/game/assets/ux/summonericons/profileicon{ver_pic}.png"
+    )
+    await ctx.response.send_message(embed=embed)
+
+    endTime = datetime.datetime.now() + datetime.timedelta(seconds=60)
+    while ver_pic != code:
+        time.sleep(2)
+        me = lol_watcher.summoner.by_name(region, username)
+        code = me['profileIconId']
+        if code == ver_pic or datetime.datetime.now() >= endTime:
+            break
+
+    if datetime.datetime.now() >= endTime:
+        embed = discord.Embed(
+            title='Timed out!',
+            description="Your time is over, you haven't changed your profile picture in League. You can try again though.",
+            color=discord.Colour.red()
+        )
+        await ctx.followup.send(embed=embed)
+
+    # UNRANKED ROLES GIVEN AUTOMATICALLY
+    if not ranked_stats:
+        unranked = True
+
+    # CHECKING WITH IFS IF THE USER HAS ANY RANK
+    else:
+        for rank in ranked_stats:
+            if rank['queueType'] == 'RANKED_SOLO_5x5':
+                ranked_solo = rank
+            if rank['queueType'] == 'RANKED_FLEX_SR':
+                ranked_flex = rank
+
+        if ranked_solo and ranked_flex:
+            both = True
+
+    member = ctx.user
+    guild = ctx.guild
+
+    if unranked:
+        role = discord.utils.get(guild.roles, name='UNRANKED')
+        await member.add_roles(role)
+        await ctx.followup.send('Role added: UNRANKED')
+
+    elif both:
+        solo_role = discord.utils.get(guild.roles, name=ranked_solo['tier'])
+        flex_role = discord.utils.get(guild.roles, name=ranked_flex['tier'])
+        await member.add_roles(solo_role, flex_role)
+        if code == ver_pic:
+            embed = discord.Embed(
+                title='Successfully Verified!',
+                description=f"You have successfully verified your account. you received role's {ranked_solo['tier']} {ranked_flex['tier']}.",
+                color=discord.Colour.green()
+            )
+            await ctx.followup.send(embed=embed)
+
+    elif ranked_solo:
+        solo_role = discord.utils.get(guild.roles, name=ranked_solo['tier'])
+        await member.add_roles(solo_role)
+        if code == ver_pic:
+            embed = discord.Embed(
+                title='Successfully Verified!',
+                description=f"You have successfully verified your account. you received role {ranked_solo['tier']}",
+                color=discord.Colour.green()
+            )
+            await ctx.followup.send(embed=embed)
+
+    elif ranked_flex:
+        flex_role = discord.utils.get(guild.roles, name=ranked_flex['tier'])
+        await member.add_roles(flex_role)
+        if code == ver_pic:
+            embed = discord.Embed(
+                title='Successfully Verified!',
+                description=f"You have successfully verified your account. you received role {ranked_flex['tier']}.",
+                color=discord.Colour.green()
+            )
+            await ctx.followup.send(embed=embed)
+
+
+@tree.command(name='updaterank', description='Updates the ranked roles for the user',guild=discord.Object(id=821479008574242918))
+async def updaterank(ctx: discord.Interaction):
+    member = ctx.user
+    guild = ctx.guild
+    region = 'eun1'
+    API = os.environ['LApi']
+    lol_watcher = LolWatcher(API)
+    username = "username"  # Replace with the actual username or a way to retrieve it
+    try:
+        me = lol_watcher.summoner.by_name(region, username)
+        ranked_stats = lol_watcher.league.by_summoner(region, me['id'])
+    except ApiError as e:
+        await ctx.response.send_message(f"An error occurred: {e}")
+        return
+
+    unranked = not ranked_stats
+    ranked_solo = None
+    ranked_flex = None
+    both = False
+
+    if not unranked:
+        for rank in ranked_stats:
+            if rank['queueType'] == 'RANKED_SOLO_5x5':
+                ranked_solo = rank
+            if rank['queueType'] == 'RANKED_FLEX_SR':
+                ranked_flex = rank
+
+        if ranked_solo and ranked_flex:
+            both = True
+
+    if unranked:
+        role = discord.utils.get(guild.roles, name='UNRANKED')
+        await member.remove_roles(role)
+        await ctx.response.send_message('Role removed: UNRANKED')
+
+    elif both:
+        solo_role = discord.utils.get(guild.roles, name=ranked_solo['tier'])
+        flex_role = discord.utils.get(guild.roles, name=ranked_flex['tier'])
+
+        roles_to_remove = []
+        roles_to_add = []
+
+        for role in member.roles:
+            if role.name in ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND']:
+                roles_to_remove.append(role)
+
+        roles_to_add.extend([solo_role, flex_role])
+
+        await member.remove_roles(*roles_to_remove)
+        await member.add_roles(*roles_to_add)
+
+        await ctx.response.send_message(f'Roles updated: {ranked_solo["tier"]}, {ranked_flex["tier"]}')
+
+    elif ranked_solo:
+        solo_role = discord.utils.get(guild.roles, name=ranked_solo['tier'])
+
+        roles_to_remove = []
+        roles_to_add = []
+
+        for role in member.roles:
+            if role.name in ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND']:
+                roles_to_remove.append(role)
+
+        roles_to_add.append(solo_role)
+
+        await member.remove_roles(*roles_to_remove)
+        await member.add_roles(*roles_to_add)
+
+        await ctx.response.send_message(f'Role updated: {ranked_solo["tier"]}')
+
+    elif ranked_flex:
+        flex_role = discord.utils.get(guild.roles, name=ranked_flex['tier'])
+
+        roles_to_remove = []
+        roles_to_add = []
+
+        for role in member.roles:
+            if role.name in ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND']:
+                roles_to_remove.append(role)
+
+        roles_to_add.append(flex_role)
+
+        await member.remove_roles(*roles_to_remove)
+        await member.add_roles(*roles_to_add)
+
+        await ctx.response.send_message(f'Role updated: {ranked_flex["tier"]}')
 
 client.run(os.environ["DISCORD_TOKEN"])
