@@ -241,8 +241,7 @@ async def profile(ctx:discord.Interaction, username:str):
 @tree.command(name='getrole',description='gives the rank you got as a role',guild=discord.Object(id=821479008574242918))
 async def profile(ctx: discord.Interaction, username: str):
     region = 'eun1'
-    # API = os.environ['LApi']
-    API = 'RGAPI-c4b15a16-a68a-4520-9892-3affeb489db3'
+    API = os.environ['LApi']
     lol_watcher = LolWatcher(API)
     me = lol_watcher.summoner.by_name(region, username)
     ranked_stats = lol_watcher.league.by_summoner(region, me['id'])
